@@ -156,7 +156,10 @@ function AuthScreen() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff', fontFamily: 'Inter, sans-serif', padding: '60px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <div style={{ fontFamily: 'Fraunces, serif', fontWeight: 700, fontSize: 34, color: INK, marginBottom: 36 }}>Checkbnb</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 36 }}>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M5 20 V12 L9.5 16.5 L19 6 V20 H5 Z" stroke={INK} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        <div style={{ fontFamily: 'Fraunces, serif', fontWeight: 700, fontSize: 34, color: INK }}>Checkbnb</div>
+      </div>
 
       <div style={{ width: '100%', maxWidth: 400, background: '#fff', border: `1px solid ${LINE}`, borderRadius: 22, padding: '34px 32px' }}>
         <h1 style={{ fontSize: 21, fontWeight: 700, textAlign: 'center', marginBottom: 6, color: INK }}>
