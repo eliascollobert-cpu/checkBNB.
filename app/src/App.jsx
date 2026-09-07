@@ -921,6 +921,31 @@ function ProfilPage({ hoteInfo, logementsCount, onUpdateNom, onUpdatePassword, o
   );
 }
 
+function LimiteAtteinteModal({ isPro, onClose, onVoirProfil }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 50 }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 22, padding: '30px 28px', maxWidth: 380, width: '100%', textAlign: 'center' }}>
+        <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 10 }}>
+          {isPro ? 'Limite de 5 logements atteinte' : 'Formule gratuite limitée à 1 logement'}
+        </div>
+        <div style={{ fontSize: 14, color: MUTED, lineHeight: 1.5, marginBottom: 24 }}>
+          {isPro
+            ? "Ta formule Pro permet jusqu'à 5 logements. Contacte-nous si tu as besoin de plus."
+            : 'Passe à Pro pour gérer jusqu\'à 5 logements, sans limite de checklist ni de stock.'}
+        </div>
+        {!isPro && (
+          <button onClick={onVoirProfil} style={{ width: '100%', padding: '13px', borderRadius: 980, border: 'none', background: INK, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', marginBottom: 10 }}>
+            Passer à Pro
+          </button>
+        )}
+        <button onClick={onClose} style={{ width: '100%', padding: '13px', borderRadius: 980, border: `1.5px solid ${LINE}`, background: '#fff', color: INK, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+          Fermer
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function EmptyState({ onOpenAjout }) {
   return (
     <div style={{ textAlign: 'center', padding: '56px 30px', color: MUTED, background: '#fff', border: `1.5px dashed ${LINE}`, borderRadius: 20 }}>
@@ -936,6 +961,7 @@ function App({ session }) {
   const [hoteInfo, setHoteInfo] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [showAjout, setShowAjout] = useState(false);
+  const [showLimite, setShowLimite] = useState(false);
   const hoteId = session.user.id;
   const statuts = useStatuts(logements, 0);
   const tourRefs = { hero: useRef(null), raccourcis: useRef(null), ajouter: useRef(null) };
@@ -955,6 +981,7 @@ function App({ session }) {
   async function ajouterLogement(data) {
     const { error } = await supabase.from('logements').insert({ ...data, hote_id: hoteId });
     if (!error) { setShowAjout(false); chargerTout(); }
+    else { setShowAjout(false); setShowLimite(true); }
   }
 
   async function ajouterChecklistItem(logementId, libelle) {
@@ -998,6 +1025,14 @@ function App({ session }) {
   }
 
   const prenom = hoteInfo?.nom?.split(' ')[0];
+  const isPro = hoteInfo?.subscription_status === 'active';
+  const limiteLogements = isPro ? 5 : 1;
+  const limiteAtteinte = logements.length >= limiteLogements;
+
+  function handleOuvrirAjout() {
+    if (limiteAtteinte) setShowLimite(true);
+    else setShowAjout(true);
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: WARM, fontFamily: 'Inter, sans-serif', color: INK }}>
@@ -1012,19 +1047,26 @@ function App({ session }) {
 
       {!loaded ? null : (
         <>
-          {page === 'dashboard' && <DashboardPage prenom={prenom} logements={logements} statuts={statuts} onNavigate={setPage} onOpenAjout={() => setShowAjout(true)} refs={tourRefs} />}
-          {page === 'logements' && <LogementsPage logements={logements} statuts={statuts} onOpenAjout={() => setShowAjout(true)} onBack={() => setPage('dashboard')} />}
-          {page === 'checklist' && <ChecklistPage logements={logements} statuts={statuts} onToggle={toggleChecklist} onAddItem={ajouterChecklistItem} onOpenAjout={() => setShowAjout(true)} onBack={() => setPage('dashboard')} />}
-          {page === 'reassort' && <ReassortPage logements={logements} onChangeNiveau={changerNiveauReassort} onAddItem={ajouterReassortItem} onOpenAjout={() => setShowAjout(true)} onBack={() => setPage('dashboard')} />}
+          {page === 'dashboard' && <DashboardPage prenom={prenom} logements={logements} statuts={statuts} onNavigate={setPage} onOpenAjout={handleOuvrirAjout} refs={tourRefs} />}
+          {page === 'logements' && <LogementsPage logements={logements} statuts={statuts} onOpenAjout={handleOuvrirAjout} onBack={() => setPage('dashboard')} />}
+          {page === 'checklist' && <ChecklistPage logements={logements} statuts={statuts} onToggle={toggleChecklist} onAddItem={ajouterChecklistItem} onOpenAjout={handleOuvrirAjout} onBack={() => setPage('dashboard')} />}
+          {page === 'reassort' && <ReassortPage logements={logements} onChangeNiveau={changerNiveauReassort} onAddItem={ajouterReassortItem} onOpenAjout={handleOuvrirAjout} onBack={() => setPage('dashboard')} />}
           {page === 'profil' && <ProfilPage hoteInfo={hoteInfo} logementsCount={logements.length} onUpdateNom={updateNom} onUpdatePassword={updatePassword} onBack={() => setPage('dashboard')} />}
         </>
       )}
 
       {loaded && hoteInfo && !hoteInfo.guide_vu && page === 'dashboard' && (
-        <OnboardingGuide onFinish={marquerGuideVu} onOpenAjout={() => setShowAjout(true)} refs={tourRefs} />
+        <OnboardingGuide onFinish={marquerGuideVu} onOpenAjout={handleOuvrirAjout} refs={tourRefs} />
       )}
 
       {showAjout && <AjouterLogementModal onClose={() => setShowAjout(false)} onSave={ajouterLogement} />}
+      {showLimite && (
+        <LimiteAtteinteModal
+          isPro={isPro}
+          onClose={() => setShowLimite(false)}
+          onVoirProfil={() => { setShowLimite(false); setPage('profil'); }}
+        />
+      )}
     </div>
   );
 }
